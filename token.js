@@ -3,176 +3,11 @@ import BigNumber from "bignumber.js";
 
 const web3 = new Web3(
   new Web3.providers.HttpProvider(
-    process.env.INFURA_KEY
+    "https://mainnet.infura.io/v3/67b5c4101fcd46dda47de2384c0c97e1"
   )
 );
+
 const ABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "account", type: "address" },
-      { internalType: "address", name: "implementation_", type: "address" },
-      { internalType: "uint256", name: "initialSupply_", type: "uint256" },
-      {
-        internalType: "uint256",
-        name: "mintingAllowedAfter_",
-        type: "uint256",
-      },
-      { internalType: "bool", name: "transferPaused_", type: "bool" },
-    ],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "spender",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "Approval",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "string",
-        name: "oldName",
-        type: "string",
-      },
-      {
-        indexed: false,
-        internalType: "string",
-        name: "newName",
-        type: "string",
-      },
-    ],
-    name: "ChangedName",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "string",
-        name: "oldSybmol",
-        type: "string",
-      },
-      {
-        indexed: false,
-        internalType: "string",
-        name: "newSybmol",
-        type: "string",
-      },
-    ],
-    name: "ChangedSymbol",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "delegator",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "fromDelegate",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "toDelegate",
-        type: "address",
-      },
-    ],
-    name: "DelegateChanged",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "delegate",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "previousBalance",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "newBalance",
-        type: "uint256",
-      },
-    ],
-    name: "DelegateVotesChanged",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "oldMinter",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "newMinter",
-        type: "address",
-      },
-    ],
-    name: "MinterChanged",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "address",
-        name: "oldImplementation",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "newImplementation",
-        type: "address",
-      },
-    ],
-    name: "NewImplementation",
-    type: "event",
-  },
   {
     anonymous: false,
     inputs: [
@@ -187,86 +22,6 @@ const ABI = [
     ],
     name: "Transfer",
     type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "minter",
-        type: "address",
-      },
-    ],
-    name: "TransferPaused",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "minter",
-        type: "address",
-      },
-    ],
-    name: "TransferUnpaused",
-    type: "event",
-  },
-  { stateMutability: "payable", type: "fallback" },
-  {
-    inputs: [
-      { internalType: "address", name: "implementation_", type: "address" },
-    ],
-    name: "_setImplementation",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "decimals",
-    outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "implementation",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "instaIndex",
-    outputs: [
-      { internalType: "contract IndexInterface", name: "", type: "address" },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "name",
-    outputs: [{ internalType: "string", name: "", type: "string" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "symbol",
-    outputs: [{ internalType: "string", name: "", type: "string" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "totalSupply",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
   },
 ];
 const CONTRACT_ADDR = "0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb";
@@ -283,12 +38,25 @@ let map = new Map();
 await getResult();
 async function getResult() {
   let j = 0;
+  // i - the block on which the first event got emitted for INST transfer
+  // used loop coz infurna gives error if the number of logs are more then 10k
   for (let i = 12100000; i < blockNumber; i += 10000) {
-    console.log(i, j);
     await getEvents(j, i, map);
     j = i;
   }
-  console.log(map);
+  let array = [];
+  //   console.log(map);
+  map.forEach((k, v) => {
+    array.push({ address: v, amount: new BigNumber(k) });
+  });
+  array = array.sort((a, b) => (a.amount.gt(b.amount) ? 1 : -1));
+  for (let i = array.length - 1; i >= array.length - 15; i--) {
+    console.log(
+      `Holder Number ${array.length - i}: Address[${
+        array[i].address
+      }] with Amount - ${array[i].amount.toFixed(0)} `
+    );
+  }
 }
 
 async function getEvents(start, end, map) {
@@ -301,7 +69,6 @@ async function getEvents(start, end, map) {
     "Transfer",
     options,
     async function (error, events) {
-      console.log(events);
       if (events) {
         for (let obj of events) {
           var from = obj.returnValues.from.toLowerCase();
