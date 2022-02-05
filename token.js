@@ -33,61 +33,65 @@ const blockNumber = await web3.eth.getBlockNumber();
 function throwErr(err) {
   throw new Error(err);
 }
-let map = new Map();
 
 await getResult();
+
 async function getResult() {
   let j = 0;
-  // i - the block on which the first event got emitted for INST transfer
-  // used loop coz infurna gives error if the number of logs are more then 10k
-  for (let i = 12100000; i < blockNumber; i += 10000) {
-    await getEvents(j, i, map);
-    j = i;
+  let map = new Map();
+  let eventData = [];
+  await getEvents(0, blockNumber, eventData);
+  
+  for (let obj of eventData) {
+    var from = obj.returnValues.from.toLowerCase();
+    var to = obj.returnValues.to.toLowerCase();
+    var balance = new BigNumber(obj.returnValues.amount);
+    map.set(from, 0);
+    var netfrom = new BigNumber(map.get(from)).minus(
+      new BigNumber(balance)
+    );
+    map.set(from, netfrom);
+
+    if (!map.get(to)) {
+      map.set(to, balance);
+    } else {
+      var tobal = new BigNumber(map.get(to)).plus(balance);
+      map.set(to, tobal);
+    }
   }
-  let array = [];
-  //   console.log(map);
+  
+  let arr = [];
   map.forEach((k, v) => {
-    array.push({ address: v, amount: new BigNumber(k) });
+    arr.push({ address: v, amount: new BigNumber(k) });
   });
-  array = array.sort((a, b) => (a.amount.gt(b.amount) ? 1 : -1));
-  for (let i = array.length - 1; i >= array.length - 15; i--) {
+  arr = arr.sort((a, b) => (a.amount.gt(b.amount) ? 1 : -1));
+  for (let i = arr.length - 1; i >= arr.length - 15; i--) {
     console.log(
-      `Holder Number ${array.length - i}: Address[${
-        array[i].address
-      }] with Amount - ${array[i].amount.toFixed(0)} `
+      `Holder Number ${arr.length - i}: Address[${arr[i].address
+      }] with Amount - ${arr[i].amount.toFixed(0)} `
     );
   }
 }
 
-async function getEvents(start, end, map) {
+async function getEvents(start, end, eventData) {
   let options = {
     fromBlock: start,
     toBlock: end,
   };
 
-  await contract.getPastEvents(
-    "Transfer",
-    options,
-    async function (error, events) {
-      if (events) {
-        for (let obj of events) {
-          var from = obj.returnValues.from.toLowerCase();
-          var to = obj.returnValues.to.toLowerCase();
-          var balance = new BigNumber(obj.returnValues.amount);
-          map.set(from, 0);
-          var netfrom = new BigNumber(map.get(from)).minus(
-            new BigNumber(balance)
-          );
-          map.set(from, netfrom);
-
-          if (!map.get(to)) {
-            map.set(to, balance);
-          } else {
-            var tobal = new BigNumber(map.get(to)).plus(balance);
-            map.set(to, tobal);
-          }
+  await contract.getPastEvents("Transfer", options)
+    .then(
+      async function (events) {
+        // eventData.push(events);
+        for (var ev of events) {
+          eventData.push(ev);
         }
+      })
+    .catch(
+      async function (error) {
+        let mid = Math.round((start + end) / 2);
+        await getEvents(start, mid, eventData);
+        await getEvents(mid + 1, end, eventData);
       }
-    }
-  );
+    );
 }
