@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 
 const web3 = new Web3(
   new Web3.providers.HttpProvider(
-    process.env.INFURA_KEY
+    "https://mainnet.infura.io/v3/9f92aae7ba1a450cb252a61f44d80eb7"
   )
 );
 
@@ -41,12 +41,15 @@ async function getResult() {
   let map = new Map();
   let eventData = [];
   await getEvents(0, blockNumber, eventData);
-  
+  // console.log(eventData);
   for (let obj of eventData) {
     var from = obj.returnValues.from.toLowerCase();
     var to = obj.returnValues.to.toLowerCase();
     var balance = new BigNumber(obj.returnValues.amount);
-    map.set(from, 0);
+    if(!map.get(from)){
+      map.set(from, 0);
+    }
+    
     var netfrom = new BigNumber(map.get(from)).minus(
       new BigNumber(balance)
     );
@@ -59,7 +62,7 @@ async function getResult() {
       map.set(to, tobal);
     }
   }
-  
+  // console.log(map);
   let arr = [];
   map.forEach((k, v) => {
     arr.push({ address: v, amount: new BigNumber(k) });
