@@ -1,6 +1,7 @@
 use ethcontract::transaction::Account;
 use std::time::Duration;
 use web3::api::Web3;
+use async_recursion::async_recursion;
 use web3::Transport;
 use web3::types::*;
 use ordered_map::OrderedMap;
@@ -28,8 +29,6 @@ use core::fmt::Write;
 extern crate log;
 extern crate env_logger;
 extern crate hex_literal;
-// static mut web3: ethcontract::Web3<dyn Transport> = web3::Web3::new(web3::transports::Http::new("http://127.0.0.1:8545"));
-
 
 #[tokio::main]
 async fn main() -> web3::contract::Result<()> {
@@ -37,24 +36,24 @@ async fn main() -> web3::contract::Result<()> {
     let _ = env_logger::try_init();
     
 
-    let events: Vec<Log> = Vec::new();
-    web3 = web3::Web3::new(web3::transports::Http::new("http://127.0.0.1:8545")?);
-    let mut accounts = HashMap::<H256, U256>::new();
+    let mut events: &mut Vec<Log> = &mut Vec::new();
+    let web3: &Web3<Http> = &web3::Web3::new(web3::transports::Http::new(&env::var("INFURA_MAINNET").unwrap())?);
+    let mut accounts = HashMap::<H256,U256>::new();
     
     let latest_block = web3.eth().block(BlockId::Number(BlockNumber::Latest)).await.unwrap().unwrap();
-    let bn:u64 = (latest_block.number.unwrap());
-    getEvents(0, bn);
+    let bn:u64 = (latest_block.number.unwrap()).as_u64();
+    getEvents(0, bn, events, &web3).await?;
 
-
-    async fn getEvents(start: u64, end: u64) -> Result<(), web3::contract::Error>  {
+    #[async_recursion]
+    async fn getEvents(start: u64, end: u64, events: &mut Vec<Log>, web3: &Web3<Http>) -> Result<(), web3::contract::Error>  {
         let contract_addr = Address::from_str("0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb").unwrap();
 
         let num: u64 = end - start + 1;
         if num>10000 {
 
             let mid: u64 = ((start+end)/2);
-            getEvents(start, mid);
-            getEvents(mid+1, end);
+            getEvents(start, mid, events, &web3).await?;
+            getEvents(mid+1, end, events, &web3).await?;
         }
 
         let filter = FilterBuilder::default()
@@ -80,23 +79,22 @@ async fn main() -> web3::contract::Result<()> {
     for log in events{
         println!("{:#?}", log);
 
-        let value:U256 = U256::from(log.data);
-        let from: H256 = log.topics[1];
-        let to: H256 = log.topics[2];
+        let value:U256 = U256::from_big_endian(&log.data.0[0..32]);
+        let from: &H256 = &log.topics[1];
+        let to: &H256 = &log.topics[2];
 
-        accounts[&from] -= value;
+        let temp: U256 = U256::zero();
+        accounts.entry(*from).or_insert(temp);
+        accounts.insert(*from, accounts[from] - value);
 
-        if accounts.contains_key(&to) {
-            accounts[&to] += value;
-        } else {
-            accounts.insert(to, value);
-        }              
+        accounts.entry(*to).or_insert(value);
+        accounts.insert(*to, accounts[to] + value);              
     }
 
     let mut topholders: Vec<(&H256, &U256)> = accounts.iter().collect();
-    topholders.sort_by(|a,b| b.1.cmp(a.1));
+    topholders.sort_unstable_by(|a,b| b.1.cmp(a.1));
 
-    let count = 0;
+    let mut count = 0;
     for holder in topholders {
         println!("{} / {}", holder.0, holder.1);
         count += 1;
