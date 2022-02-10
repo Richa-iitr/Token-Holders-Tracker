@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 
 const web3 = new Web3(
   new Web3.providers.HttpProvider(
-    "https://mainnet.infura.io/v3/9f92aae7ba1a450cb252a61f44d80eb7"
+    process.env.INFURA_KEY
   )
 );
 
